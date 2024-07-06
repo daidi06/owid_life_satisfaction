@@ -5,15 +5,17 @@ output:
     theme: united
 ---
 
-<img src="Our_World_in_Data_logo.png" style='width: 100px; position:absolute; top:0; right:0; padding:10px;'/>
+<img src="Our_World_in_Data_logo.png" style="width: 100px; position:absolute; top:0; right:0; padding:10px;"/>
 
 <link href='https://fonts.googleapis.com/css?family=Playfair Display' rel='stylesheet'>
+
+```{=html}
 <style>
 h1 {
     font-family: Playfair Display, Georgia, Times New Roman, "Liberation Serif", serif;
 }
 </style>
-
+```
 ```{r include = F}
 knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 
@@ -22,26 +24,28 @@ if(!require(pacman)) install.packages("pacman")
 pacman::p_load(plotly, tidyverse, reactable, here)
 ```
 
-```{r}
+```{r include=FALSE}
 ## Import data
 cantril <- 
-  read_csv(here("data/happiness-cantril-ladder.csv")) %>% 
-  rename(Country = Entity)
+  read_csv(here("data/share-of-people-who-say-they-are-happy.csv")) %>% 
+  rename(Country = Entity, `Cantril ladder score` = `Happiness: Happy (aggregate)`)
+
+head(cantril)
 ```
 
 “Please imagine a ladder, with steps numbered from 0 at the bottom to 10 at the top. The top of the ladder represents the best possible life for you and the bottom of the ladder represents the worst possible life for you. On which step of the ladder would you say you personally feel you stand at this time?”
 
-# {.tabset}
+#  {.tabset}
 
 ## 🔢 Table
 
 ```{r}
 cantril %>% 
-  filter(Year %in% c(2011, 2022)) %>% 
+  filter(Year %in% c(2010, 2022)) %>% 
   pivot_wider(names_from = Year, values_from = `Cantril ladder score`, id_cols = Country) %>% 
-  select(Country, `2011`, `2022`) %>% 
-  mutate(`Absolute change` = round(`2022` - `2011`, 3)) %>% 
-  mutate(`Relative change` = (`2022` - `2011`) / `2011`) %>% 
+  select(Country, `2010`, `2022`) %>% 
+  mutate(`Absolute change` = round(`2022` - `2010`, 3)) %>% 
+  mutate(`Relative change` = (`2022` - `2010`) / `2010`) %>% 
   reactable(
     columns = list(`Relative change` = colDef(format = colFormat(percent = TRUE, digits = 1))) 
   )
@@ -49,22 +53,44 @@ cantril %>%
 
 ## 🌎 Map
 
-```{r}
+```{r eval=FALSE, include=FALSE}
 cantril %>% 
   mutate(`Cantril ladder score` = round(`Cantril ladder score`, 2)) %>%
-  plot_geo(width = 940) %>% 
+  plot_geo() %>% 
   add_trace(
     z = ~`Cantril ladder score`,
     color = ~`Cantril ladder score`,
     locations = ~Code,
     text = ~Country,
-    frame = ~Year, colors = "YlGn"
+    frame = ~Year, 
+    colors = "YlGn"
   ) %>% 
   colorbar(title = NULL)
 ```
 
+```{r}
+cantril %>%
+  mutate(`Cantril ladder score` = round(`Cantril ladder score`, 2)) %>%
+  plot_geo() %>%
+  add_trace(
+    z = ~`Cantril ladder score`,
+    color = ~`Cantril ladder score`,
+    locations = ~Code,
+    text = ~Country,
+    frame = ~Year,
+    colors = "YlGn",
+    colorbar = list(title = "Score")
+  )
+```
+
+
 
 ## 📈 Chart
+
+```{r include=FALSE}
+cantril %>% 
+  filter(Country %in% c("Norway", "Australia", "Germany", "Bolivia", "Colombia", "Bhutan"))
+```
 
 ```{r}
 # simple line chart of the data, for five countries on different continents (ggplot, piped into ggplotly)
@@ -74,7 +100,7 @@ cantril_chart <-
   filter(Country %in% c("Norway", "Australia", "Germany", "Bolivia", "Colombia", "Bhutan")) %>%
   ggplot(aes(x = Year, y = `Cantril ladder score`, color = Country)) +
   geom_line() +
-  scale_y_continuous(limits = c(0, 10)) +
+  scale_y_continuous(limits = c(75, 100)) +
   labs(x = NULL,
        y = NULL, 
        color = NULL) +
@@ -104,7 +130,7 @@ cantril_plotly <- plot_ly(
   type = "scatter", 
   mode = "lines+markers"
 ) %>%
-  layout(yaxis = list(range = c(0, 10)))
+  layout(yaxis = list(range = c(75, 100)))
 
 
 country_filter <- filter_select(
@@ -120,6 +146,7 @@ bscols(
 )
 ```
 
+```{=html}
 <script>
 function filter_default() {
   var default_countries = ["Norway", "Australia", "Germany", "Bolivia", "Colombia", "Bhutan"]; // Set default countries here
@@ -127,13 +154,9 @@ function filter_default() {
 }
 window.onload = filter_default;
 </script>
-
-
-# {.unlisted}
+```
+#  {.unlisted}
 
 Data source: World Happiness Report
 
-[OurWorldInData.org/happiness-and-life-satisfaction](https://ourworldindata.org/grapher/happiness-cantril-ladder) | CC BY
-
-
-
+[OurWorldInData.org/happiness-and-life-satisfaction](https://ourworldindata.org/grapher/happiness-cantril-ladder) \| CC BY
